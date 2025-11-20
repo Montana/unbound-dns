@@ -18,8 +18,7 @@ forward-zone:
     forward-addr: 1.0.0.1
 ```
 
-If Cloudflare fails or blocks requests, **DNS resolution fails entirely**.
-To avoid this, we use **recursive mode**, allowing Unbound to resolve domains directly from root DNS servers.
+If Cloudflare fails or blocks requests, **DNS resolution fails entirely**. To avoid this, we use **recursive mode**, allowing Unbound to resolve domains directly from root DNS servers.
 
 ---
 
@@ -27,17 +26,8 @@ To avoid this, we use **recursive mode**, allowing Unbound to resolve domains di
 
 Recursive Unbound becomes its own independent DNS resolver, querying root DNS servers, validating via DNSSEC, and caching locally for speed.
 
----
 
-## Step 1 — Install Unbound (macOS)
-
-```bash
-brew install unbound
-```
-
----
-
-## Step 2 — Download Root DNS Hints
+## Download Root DNS Hints
 
 ```bash
 curl -o /usr/local/etc/unbound/root.hints https://www.internic.net/domain/named.root
@@ -45,7 +35,7 @@ curl -o /usr/local/etc/unbound/root.hints https://www.internic.net/domain/named.
 
 ---
 
-## Step 3 — Enable DNSSEC Trust Anchor
+## Enable DNSSEC Trust Anchor
 
 ```bash
 sudo unbound-anchor
@@ -53,7 +43,7 @@ sudo unbound-anchor
 
 ---
 
-## Step 4 — Survival Mode Configuration
+## Survival Mode Configuration
 
 Create or edit the following file:
 
@@ -85,7 +75,7 @@ server:
 
 ---
 
-## Step 5 — Start Unbound
+## Start Unbound
 
 ```bash
 sudo unbound -d -c /usr/local/etc/unbound/unbound.conf
@@ -93,7 +83,7 @@ sudo unbound -d -c /usr/local/etc/unbound/unbound.conf
 
 ---
 
-## Step 6 — Test Recursive Resolution
+## Test Recursive Resolution
 
 ```bash
 dig google.com @127.0.0.1
@@ -124,32 +114,7 @@ done
 | github.com    | 29ms                    | 51ms              |
 | wikipedia.org | 30ms                    | 48ms              |
 
-Forwarding mode is usually faster, but recursive mode is fully independent.
-Once domains are cached, second lookups often resolve in under **1ms**.
-
----
-
-## Optional — Matplotlib Chart
-
-`dns_latency_chart.py`:
-
-```python
-import matplotlib.pyplot as plt
-
-domains = ["google", "github", "wikipedia", "cloudflare"]
-forward = [32, 29, 30, 27]
-recursive = [44, 51, 48, 55]
-
-plt.plot(domains, forward, marker='o')
-plt.plot(domains, recursive, marker='o')
-plt.title("DNS Latency (ms) – Cloudflare Forwarding vs Recursive Unbound")
-plt.xlabel("Domain")
-plt.ylabel("Latency (ms)")
-plt.legend(["Forward Mode", "Recursive Mode"])
-plt.savefig("dns_latency_comparison.png")
-
-print("Saved as dns_latency_comparison.png")
-```
+Forwarding mode is usually faster, but recursive mode is fully independent. Once domains are cached, second lookups often resolve in under **1ms**.
 
 ---
 
