@@ -1,5 +1,8 @@
 # unbound-dns
 
+<img width="631" height="800" alt="image" src="https://github.com/user-attachments/assets/25ecd854-1b1d-4bf2-88c7-4b2fdaf79265" />
+
+
 A Fully Independent Recursive DNS Resolver for macOS.
 ---
 
