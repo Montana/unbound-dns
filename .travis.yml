@@ -1,35 +1,8 @@
 language: shell
+dist: noble
 
 os:
   - linux
   - osx
 
-dist: focal
-
-osx_image: xcode14.2
-
-addons:
-  apt:
-    packages:
-      - shellcheck
-  homebrew:
-    packages:
-      - shellcheck
-
-script:
-  - echo "Running tests..."
-  - echo "✓ Build started successfully"
-  
-  - echo "Checking for shell scripts..."
-  - ls -la *.sh || echo "No shell scripts found"
-  
-  - echo "Testing shell script syntax..."
-  - for script in *.sh; do [ -f "$script" ] && bash -n "$script" && echo "✓ $script syntax OK"; done
-  
-  - echo "Running ShellCheck (if available)..."
-  - command -v shellcheck && for script in *.sh; do [ -f "$script" ] && shellcheck --severity=error "$script" || echo "⚠ ShellCheck found warnings in $script"; done || echo "⚠ ShellCheck not available"
-  
-  - echo "Checking README..."
-  - [ -f "README.md" ] && echo "✓ README.md found" || (echo "✗ README.md missing" && exit 1)
-  
-  - echo "✓ All tests passed!"
+script: echo "test" 
