@@ -26,7 +26,14 @@ curl -O https://raw.githubusercontent.com/Montana/unbound-dns/main/unbound_dns.s
 chmod +x unbound_dns.sh
 ./unbound_dns.sh
 ```
-Enter your password when prompted. The script will install Unbound via Homebrew, create an optimized configuration with failover support, start the local DNS resolver on 127.0.0.1:53, configure your system to use it, and verify everything works.
+If you want to use this in Windows please do the following: 
+
+### Windows
+
+```bash
+irm https://raw.githubusercontent.com/Montana/unbound-dns/main/install_windows.ps1 | iex
+```
+Enter your password when prompted on Windows or macOS (even WSL2), the script will install Unbound via Homebrew, create an optimized configuration with failover support, start the local DNS resolver on 127.0.0.1:53, configure your system to use it, and verify everything works.
 
 ## DNS Provider Hierarchy
 
