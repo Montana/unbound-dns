@@ -3,207 +3,234 @@
 <img width="631" height="800" alt="image" src="https://github.com/user-attachments/assets/25ecd854-1b1d-4bf2-88c7-4b2fdaf79265" />
 
 
-A Fully Independent Recursive DNS Resolver for macOS.
----
+# Unbound DNS Setup for macOS
 
-This setup ensures your DNS continues working **even if Cloudflare or other upstream DNS providers go offline**, using **full recursive resolution with DNSSEC**.
+A resilient local DNS resolver with automatic failover across multiple DNS providers.
 
----
+## Features
 
-## Why Forwarding Mode Fails
+- **Multi-Provider Failover**: Cloudflare → Quad9 → Google DNS
+- **Survival Mode**: Serves cached responses even when all upstream providers are down
+- **DNS-over-TLS**: Encrypted DNS queries for privacy
+- **Performance Optimized**: Caching, prefetching, and thread tuning
+- **Privacy Focused**: Query minimization, identity hiding, DNSSEC hardening
+- **Automatic Backup**: Timestamped backups of existing configurations
 
-Most default Unbound configurations forward DNS queries directly to Cloudflare:
+## Requirements
 
+- macOS
+- Homebrew package manager
+- Administrator privileges (sudo access)
+
+## Installation
+
+1. Download the script:
 ```bash
-forward-zone:
-    name: "."
-    forward-addr: 1.1.1.1
-    forward-addr: 1.0.0.1
+curl -O https://github.com/montana/unbound-dns.git
+chmod +x setup-unbound_dns.sh
 ```
 
-If Cloudflare fails or blocks requests, **DNS resolution fails entirely**. To avoid this, we use **recursive mode**, allowing Unbound to resolve domains directly from root DNS servers.
-
----
-
-## Solution — Full Recursion with DNSSEC
-
-Recursive Unbound becomes its own independent DNS resolver, querying root DNS servers, validating via DNSSEC, and caching locally for speed.
-
-
-## Download Root DNS Hints
-
+2. Run the installer:
 ```bash
-curl -o /usr/local/etc/unbound/root.hints https://www.internic.net/domain/named.root
+./unbound_dns.sh
 ```
 
----
+3. Enter your password when prompted for sudo access
 
-## Enable DNSSEC Trust Anchor
+## What It Does
 
+1. Installs Unbound via Homebrew
+2. Creates optimized configuration with failover support
+3. Starts Unbound as a local DNS resolver on 127.0.0.1:53
+4. Configures your system to use the local resolver
+5. Tests DNS resolution
+
+## Failover Strategy
+
+### Primary: Cloudflare DNS
+- 1.1.1.1
+- 1.0.0.1
+
+### Secondary: Quad9 DNS
+- 9.9.9.9
+- 149.112.112.112
+
+### Tertiary: Google DNS
+- 8.8.8.8
+- 8.8.4.4
+
+### Survival Mode
+When all providers are unavailable, Unbound serves cached DNS responses for up to 24 hours, keeping your internet functional during outages.
+
+## Configuration
+
+Config location: `$(brew --prefix)/etc/unbound/unbound.conf`
+
+Log location: `$(brew --prefix)/var/log/unbound.log`
+
+### Key Settings
+
+- **Cache Size**: 100MB RRset cache, 50MB message cache
+- **Cache Duration**: Expired entries served for 24 hours during outages
+- **Threads**: 2 worker threads
+- **Security**: DNSSEC validation, query minimization
+- **Privacy**: DNS-over-TLS, no query logging
+
+## Management
+
+### Check Status
 ```bash
-sudo unbound-anchor
+pgrep -x unbound
 ```
 
----
-
-## Survival Mode Configuration
-
-Create or edit the following file:
-
-```
-/usr/local/etc/unbound/unbound.conf
-```
-
-Insert:
-
+### View Logs
 ```bash
-server:
-    interface: 127.0.0.1
-    port: 53
-    do-ip4: yes
-    do-ip6: no
-
-    root-hints: "/usr/local/etc/unbound/root.hints"
-    auto-trust-anchor-file: "/usr/local/etc/unbound/root.key"
-
-    qname-minimisation: yes
-    cache-min-ttl: 3600
-    cache-max-ttl: 86400
-    harden-dnssec-stripped: yes
-    hide-identity: yes
-    hide-version: yes
-    access-control: 127.0.0.0/8 allow
-    verbosity: 1
+tail -f $(brew --prefix)/var/log/unbound.log
 ```
 
----
-
-## Start Unbound
-
+### Restart Service
 ```bash
-sudo unbound -d -c /usr/local/etc/unbound/unbound.conf
+sudo killall unbound
+sudo unbound -d -c $(brew --prefix)/etc/unbound/unbound.conf &
 ```
 
----
-
-## Test Recursive Resolution
-
+### Stop Service
 ```bash
-dig google.com @127.0.0.1
+sudo killall unbound
 ```
 
-Expected result should include:
-
-```
-;; SERVER: 127.0.0.1#53
-```
-
----
-
-## DNS Latency Testing
-
+### Test DNS Resolution
 ```bash
-for host in google.com cloudflare.com wikipedia.org github.com; do
-  echo "Testing $host"
-  time dig "$host" +short >/dev/null
-done
+dig @127.0.0.1 google.com
 ```
 
-### Example Results
-
-| Hostname      | Cloudflare Forward-Only | Recursive Unbound |
-| ------------- | ----------------------- | ----------------- |
-| google.com    | 32ms                    | 44ms              |
-| github.com    | 29ms                    | 51ms              |
-| wikipedia.org | 30ms                    | 48ms              |
-
-Forwarding mode is usually faster, but recursive mode is fully independent. Once domains are cached, second lookups often resolve in under **1ms**.
-
----
-
-## MITM Hardening (Recommended)
-
-Add to `unbound.conf`:
-
+### Restore Previous DNS Settings
 ```bash
-server:
-    harden-dnssec-stripped: yes
-    hide-identity: yes
-    hide-version: yes
-    harden-glue: yes
-    unwanted-reply-threshold: 10000
-    do-not-query-localhost: no
-    prefetch: yes
-    prefetch-key: yes
+sudo networksetup -setdnsservers "Wi-Fi" empty
 ```
 
----
+## Troubleshooting
 
-## Failover Mode (Recursive First, Cloudflare Only if Needed)
+### DNS Not Working
 
+Check if Unbound is running:
 ```bash
-server:
-    root-hints: "/usr/local/etc/unbound/root.hints"
-    auto-trust-anchor-file: "/usr/local/etc/unbound/root.key"
-
-forward-zone:
-    name: "."
-    forward-addr: 1.1.1.1
-    forward-addr: 1.0.0.1
-    forward-first: yes
+pgrep -x unbound
 ```
 
-### Behavior
-
-| Mode       | Priority | When Used          |
-| ---------- | -------- | ------------------ |
-| Recursive  | Primary  | Always first       |
-| Cloudflare | Backup   | If recursion fails |
-
----
-
-## Failover Mode Test
-
-Block a root server to simulate DNS failure:
-
+Check logs for errors:
 ```bash
-sudo route add -host 198.41.0.4 127.0.0.1
-dig google.com @127.0.0.1
+cat $(brew --prefix)/var/log/unbound.log
 ```
 
-If configured correctly, Unbound should fall back to Cloudflare and still resolve the query.
-
----
-
-## Make macOS Use Unbound System-Wide
-
+Validate configuration:
 ```bash
-networksetup -setdnsservers "Wi-Fi" 127.0.0.1
+unbound-checkconf $(brew --prefix)/etc/unbound/unbound.conf
 ```
 
-To revert:
+### Port 53 Already in Use
 
+Check what's using port 53:
 ```bash
-networksetup -setdnsservers "Wi-Fi" Empty
+sudo lsof -i :53
 ```
 
----
+Stop conflicting service or change Unbound port in config.
 
-## Summary
+### Slow DNS Resolution
 
-| Feature                 | Status   |
-| ----------------------- | -------- |
-| Survival Mode           | Active   |
-| Failover Mode           | Active   |
-| DNSSEC Validation       | Enabled  |
-| MITM Hardening          | Added    |
-| Recursive Resolution    | Enabled  |
-| Automatic macOS Startup | Optional |
+Check upstream connectivity:
+```bash
+dig @1.1.1.1 google.com
+dig @9.9.9.9 google.com
+dig @8.8.8.8 google.com
+```
 
----
+Clear cache:
+```bash
+sudo killall -HUP unbound
+```
+
+## Customization
+
+### Allow Local Network Access
+
+Uncomment these lines in `unbound.conf`:
+```
+access-control: 10.0.0.0/8 allow
+access-control: 192.168.0.0/16 allow
+access-control: 172.16.0.0/12 allow
+```
+
+Then change interface binding:
+```
+interface: 0.0.0.0
+```
+
+### Change DNS Providers
+
+Edit the `forward-zone` section in `unbound.conf` to add/remove providers.
+
+### Adjust Cache Size
+
+Modify these values:
+```
+rrset-cache-size: 100m
+msg-cache-size: 50m
+```
+
+### Enable Query Logging
+
+Set in `unbound.conf`:
+```
+log-queries: yes
+log-replies: yes
+```
+
+## Uninstall
+
+1. Restore original DNS settings:
+```bash
+sudo networksetup -setdnsservers "Wi-Fi" empty
+```
+
+2. Stop Unbound:
+```bash
+sudo killall unbound
+```
+
+3. Remove Unbound:
+```bash
+brew uninstall unbound
+```
+
+4. Remove configuration (optional):
+```bash
+rm -rf $(brew --prefix)/etc/unbound
+```
+
+## Performance Benefits
+
+- **Faster Lookups**: Local caching eliminates repeated queries
+- **Reduced Latency**: No round-trip to external DNS servers for cached entries
+- **Prefetching**: Popular domains refreshed before expiration
+- **Outage Protection**: Serves stale cache during provider failures
+
+## Privacy Benefits
+
+- **Encrypted Queries**: DNS-over-TLS prevents ISP snooping
+- **Query Minimization**: Only sends necessary information to DNS servers
+- **No Logging**: Your queries aren't stored locally
+- **Identity Hidden**: DNS server can't identify your resolver
+
+## Security Features
+
+- **DNSSEC Validation**: Cryptographic verification of DNS responses
+- **Hardened Configuration**: Protection against various DNS attacks
+- **Strict TLS**: Only uses encrypted connections to upstream servers
+- **Access Control**: Only localhost can query by default
 
 <img width="1580" height="780" alt="output (27)" src="https://github.com/user-attachments/assets/7d4d13ca-dde1-4248-acd7-c62cefd00450" />
-
 
 ## Author
 Michael Mendy (c) 2025.
