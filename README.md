@@ -1,9 +1,6 @@
-
 # unbound-dns
 
 <img width="631" height="800" alt="image" src="https://github.com/user-attachments/assets/25ecd854-1b1d-4bf2-88c7-4b2fdaf79265" />
-
-# Unbound DNS Setup for macOS
 
 A resilient local DNS resolver with automatic failover across multiple DNS providers. When Cloudflare goes down, your DNS keeps working. When everything goes down, survival mode kicks in.
 
