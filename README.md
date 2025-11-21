@@ -1,3 +1,5 @@
+[![CI](https://github.com/Montana/unbound-dns/actions/workflows/ci.yml/badge.svg)](https://github.com/Montana/unbound-dns/actions/workflows/ci.yml)
+
 # unbound-dns
 
 Unbound knows exactly who to call when Cloudflare doesn't pick up.
