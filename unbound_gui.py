@@ -478,16 +478,29 @@ Tips:
         
         def restart():
             if self.os_type == "macos":
-                success = self.run_command("brew services restart unbound")
+                self.run_command("sudo killall unbound")
+                time.sleep(2)
+                try:
+                    brew_prefix = subprocess.run(['brew', '--prefix'], 
+                                                capture_output=True, text=True, timeout=5)
+                    if brew_prefix.returncode == 0:
+                        prefix = brew_prefix.stdout.strip()
+                        config_path = f"{prefix}/etc/unbound/unbound.conf"
+                        success = self.run_command(f"sudo {prefix}/sbin/unbound -c {config_path} &")
+                    else:
+                        success = False
+                except:
+                    success = False
             else:
                 success = self.run_command("sudo systemctl restart unbound")
+            
+            time.sleep(2)
             
             if success:
                 self.log("Unbound restarted successfully", "#28a745")
             else:
                 self.log("Failed to restart Unbound", "#ff6b6b")
             
-            time.sleep(2)
             self.root.after(0, self.check_status)
         
         threading.Thread(target=restart, daemon=True).start()
@@ -581,9 +594,21 @@ Tips:
         
         def start():
             if self.os_type == "macos":
-                success = self.run_command("brew services start unbound")
+                try:
+                    brew_prefix = subprocess.run(['brew', '--prefix'], 
+                                                capture_output=True, text=True, timeout=5)
+                    if brew_prefix.returncode == 0:
+                        prefix = brew_prefix.stdout.strip()
+                        config_path = f"{prefix}/etc/unbound/unbound.conf"
+                        success = self.run_command(f"sudo {prefix}/sbin/unbound -c {config_path} &")
+                    else:
+                        success = False
+                except:
+                    success = False
             else:
                 success = self.run_command("sudo systemctl start unbound")
+            
+            time.sleep(2)
             
             if success:
                 self.log("Unbound started successfully", "#28a745")
@@ -600,9 +625,11 @@ Tips:
         
         def stop():
             if self.os_type == "macos":
-                success = self.run_command("brew services stop unbound")
+                success = self.run_command("sudo killall unbound")
             else:
                 success = self.run_command("sudo systemctl stop unbound")
+            
+            time.sleep(1)
             
             if success:
                 self.log("Unbound stopped successfully", "#28a745")
