@@ -58,6 +58,11 @@ If you don't see any activity in the logs while browsing, your system is definit
 
 The 24-hour survival mode is supposed to keep serving cached DNS responses even when all upstream providers are unreachable. To test this, first query a domain like `dig @127.0.0.1 github.com` to get it into cache. Then simulate a complete internet outage by blocking all outbound DNS traffic. On macOS/Linux, use `sudo iptables -A OUTPUT -p tcp --dport 853 -j DROP` and `sudo iptables -A OUTPUT -p udp --dport 53 -j DROP`. On Windows, you can disable all network adapters except loopback with `Get-NetAdapter | Where-Object {$_.Name -ne "Loopback"} | Disable-NetAdapter -Confirm:$false`.
 
+
+<img width="1180" height="780" alt="output (28)" src="https://github.com/user-attachments/assets/7a4366c0-5aff-4368-b6df-a091ed4643d3" />
+
+>The graph illustrates how Unbound’s survival mode performs during a complete internet outage. As soon as outbound DNS traffic is blocked, the resolver begins relying solely on its cache. At the beginning of the outage, very few domains resolve successfully because the cache hasn’t yet accumulated much data. Over time, as more domains have been queried before the outage, the number of cached responses that Unbound can still serve begins to rise. 
+
 Now try querying github.com again. Even though there's no internet connection, Unbound should still return the cached IP address. This is survival mode in action. New domains that aren't cached will fail, but anything you've visited recently should still resolve. Clean up your test by removing the firewall rules or re-enabling network adapters when you're done.
 
 ### Comparing with Direct DNS Queries
