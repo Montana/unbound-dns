@@ -107,7 +107,7 @@ This process typically takes between one to five minutes depending on your syste
 
 ## GUI Management Commands
 
-<img width="888" height="721" alt="Screenshot 2025-11-21 at 1 36 04 PM" src="https://github.com/user-attachments/assets/bcb9e7cd-2aac-4008-970c-e7885babffdf" />
+<img width="879" height="724" alt="Screenshot 2025-11-21 at 2 02 15 PM" src="https://github.com/user-attachments/assets/d208976a-b426-44b4-8458-d2c7d9b54d0f" />
 
 <br> While the GUI provides all the controls you need, you can also manage Unbound from the command line if preferred. On macOS, use brew services status unbound to check status, brew services restart unbound to restart the service, and brew services stop unbound to stop it. On Linux systems, use `systemctl status unbound` to check status, systemctl restart unbound to restart, and systemctl stop unbound to stop the service. To view detailed logs on macOS, run `tail -f $(brew --prefix)/var/log/unbound.log`, and on Linux use `journalctl -xeu unbound`. For testing DNS resolution, use `dig @127.0.0.1 google.com` which queries your local Unbound server and displays the results. </br>
 
