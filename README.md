@@ -25,6 +25,18 @@ Before you get started here are the system requirements you'll need in order to 
 | Privileges  | Administrator (sudo) access                      |
 | Network     | Active internet connection                       |
 
+## Windows Requirements 
+
+Windows is a bit different, in particular if you're running it in WSL2, or hypothetically even WSL.
+
+| Component | Requirement |
+|---|---|
+| Operating System | Windows 10/11 or Windows Server 2016+ |
+| PowerShell | Version 5.1 or higher |
+| Privileges | Administrator access |
+| Network | Active internet connection |
+| .NET Framework | 4.7.2 or higher |
+
 >PAN (Palo Alto Networks) capabilities are in the works as well. 
 
 ## Core Capabilities
