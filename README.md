@@ -70,6 +70,8 @@ To get a sense of real-world performance, test a variety of domains under differ
 
 If your cached queries are still taking 10-20ms, something is interfering with the cache. Check that your cache size settings in the configuration file are adequate (should be at least 50MB for the message cache and 100MB for the RRset cache). If first queries are consistently slow (over 100ms), you might be experiencing failover delays or network issues reaching the upstream providers. Check that port 853 isn't being blocked by your firewall or ISP.
 
+<img width="891" height="1098" alt="Screenshot 2025-11-20 at 8 47 47 PM" src="https://github.com/user-attachments/assets/8aa3f4e6-a0ef-4ad6-b295-bc7663b5ba78" />
+
 The difference between cached and uncached queries should be dramatic. If it's not, Unbound isn't providing much value and you should investigate why caching isn't working properly.
 
 ## Requirements
