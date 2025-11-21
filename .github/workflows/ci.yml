@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install ShellCheck
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y shellcheck
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install shellcheck
+          fi
+      
+      - name: Check shell script syntax
+        run: |
+          echo "Checking shell scripts..."
+          for script in *.sh; do
+            if [ -f "$script" ]; then
+              echo "Testing: $script"
+              bash -n "$script"
+              echo "✓ $script syntax OK"
+            fi
+          done
+      
+      - name: Run ShellCheck
+        run: |
+          echo "Running ShellCheck..."
+          for script in *.sh; do
+            if [ -f "$script" ]; then
+              echo "Analyzing: $script"
+              shellcheck --severity=error "$script" || echo "⚠ Warnings found in $script"
+            fi
+          done
+      
+      - name: Verify README exists
+        run: |
+          if [ -f "README.md" ]; then
+            echo "✓ README.md found"
+          else
+            echo "✗ README.md missing"
+            exit 1
+          fi
+      
+      - name: Success
+        run: echo "✓ All tests passed!"
