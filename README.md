@@ -76,6 +76,56 @@ Log location: `$(brew --prefix)/var/log/unbound.log`
 - **Security**: DNSSEC validation, query minimization
 - **Privacy**: DNS-over-TLS, no query logging
 
+## Flowchart
+
+This is the antaomy of Unbound and how it would work if you run my script: 
+
+```bash
+╔══════════════════════════════════════════════════════════════╗
+║           UNBOUND DNS ARCHITECTURE & FAILOVER                ║
+╚══════════════════════════════════════════════════════════════╝
+
+  Your Device (macOS)
+        │
+        │ DNS Query
+        ▼
+   ┌─────────────┐
+   │   Unbound   │ ◄──── Local Cache (100MB)
+   │  127.0.0.1  │       Serves for 24h if upstream fails
+   └──────┬──────┘
+          │
+          │ TLS Encrypted
+          │
+    ┌─────┴─────┬──────────┬──────────┐
+    │           │          │          │
+    ▼           ▼          ▼          ▼
+┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
+│Cloudfl.│ │Cloudfl.│ │ Quad9  │ │ Quad9  │
+│1.1.1.1 │ │1.0.0.1 │ │9.9.9.9 │ │149.112 │
+└────────┘ └────────┘ └────────┘ └────────┘
+    │           │          │          │
+    └───────────┴──────────┴──────────┘
+                   │
+              If all fail
+                   │
+                   ▼
+         ┌──────────────────┐
+         │  Google DNS      │
+         │  8.8.8.8         │
+         │  8.8.4.4         │
+         └──────────────────┘
+                   │
+              If all fail
+                   │
+                   ▼
+         ┌──────────────────┐
+         │  SURVIVAL MODE   │
+         │  Serve Cache     │
+         │  (up to 24h)     │
+         └──────────────────┘
+```
+It is worth noting your DNS keeps working even when providers go down, which is kind of the whole point. 
+
 ## Management
 
 ### Check Status
