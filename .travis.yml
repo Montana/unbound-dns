@@ -8,12 +8,6 @@ dist: focal
 
 osx_image: xcode14.2
 
-branches:
-  only:
-    - main
-    - master
-    - develop
-
 addons:
   apt:
     packages:
