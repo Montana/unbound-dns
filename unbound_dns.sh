@@ -8,7 +8,13 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-LOG_FILE="/tmp/unbound_install.log"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    LOG_FILE="$HOME/.unbound_install.log"
+else
+    LOG_FILE="/tmp/unbound_install.log"
+fi
+
+touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
 
 print_banner() {
     echo -e "${BLUE}"
