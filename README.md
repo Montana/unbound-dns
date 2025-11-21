@@ -91,12 +91,23 @@ If you don't see any activity in the logs while browsing, your system is definit
 
 The 24-hour survival mode is supposed to keep serving cached DNS responses even when all upstream providers are unreachable. To test this, first query a domain like `dig @127.0.0.1 github.com` to get it into cache. Then simulate a complete internet outage by blocking all outbound DNS traffic. On macOS/Linux, use `sudo iptables -A OUTPUT -p tcp --dport 853 -j DROP` and `sudo iptables -A OUTPUT -p udp --dport 53 -j DROP`. On Windows, you can disable all network adapters except loopback with `Get-NetAdapter | Where-Object {$_.Name -ne "Loopback"} | Disable-NetAdapter -Confirm:$false`.
 
-
 <img width="1180" height="780" alt="output (28)" src="https://github.com/user-attachments/assets/7a4366c0-5aff-4368-b6df-a091ed4643d3" />
 
 >The graph illustrates how Unbound’s survival mode performs during a complete internet outage. As soon as outbound DNS traffic is blocked, the resolver begins relying solely on its cache. At the beginning of the outage, very few domains resolve successfully because the cache hasn’t yet accumulated much data. Over time, as more domains have been queried before the outage, the number of cached responses that Unbound can still serve begins to rise. 
 
 Now try querying github.com again. Even though there's no internet connection, Unbound should still return the cached IP address. This is survival mode in action. New domains that aren't cached will fail, but anything you've visited recently should still resolve. Clean up your test by removing the firewall rules or re-enabling network adapters when you're done.
+
+## Graphical User Interface
+
+To use the Unbound DNS Installer GUI, first ensure both files (`unbound_gui.py` and `unbound_install.sh`) are in the same directory. Launch the application by opening a terminal, navigating to the directory containing the files, and running python3 unbound_gui.py. The interface will open showing a clean window with status information at the top, a large output section in the middle, and control buttons at the bottom.
+
+<img width="792" height="629" alt="Screenshot 2025-11-21 at 1 16 48 PM" src="https://github.com/user-attachments/assets/830c8245-c4e9-4d4a-8a98-aad4dd336f3f" />
+
+When you're ready to install Unbound DNS for the first time, simply click the Install button. The system will prompt you to confirm the installation and warn you that it requires sudo privileges. After confirming, you'll be asked to enter your system password. The installation process will begin and you'll see detailed progress in the output window as the script detects your operating system, checks for conflicts, installs Unbound, creates the configuration file, starts the service, and configures your system DNS settings. This process typically takes between one to five minutes depending on your system and internet connection. Watch the output window for green success messages indicating each step has completed. When installation finishes, you'll see a completion message and the status section will update to show Unbound as running.
+
+## GUI Management Commands
+
+While the GUI provides all the controls you need, you can also manage Unbound from the command line if preferred. On macOS, use brew services status unbound to check status, brew services restart unbound to restart the service, and brew services stop unbound to stop it. On Linux systems, use `systemctl status unbound` to check status, systemctl restart unbound to restart, and systemctl stop unbound to stop the service. To view detailed logs on macOS, run `tail -f $(brew --prefix)/var/log/unbound.log`, and on Linux use `journalctl -xeu unbound`. For testing DNS resolution, use `dig @127.0.0.1 google.com` which queries your local Unbound server and displays the results.
 
 ### Comparing with Direct DNS Queries
 
