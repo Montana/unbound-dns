@@ -27,7 +27,7 @@ A resilient local DNS resolver with automatic failover across multiple DNS provi
 1. Download the script:
 ```bash
 curl -O https://github.com/montana/unbound-dns.git
-chmod +x setup-unbound_dns.sh
+chmod +x unbound_dns.sh
 ```
 
 2. Run the installer:
