@@ -12,6 +12,21 @@ Unbound DNS runs on your local machine as a local DNS resolver, translating doma
 
 A resilient local DNS resolver with automatic failover across multiple DNS providers. When Cloudflare goes down, your DNS keeps working. When everything goes down, survival mode kicks in.
 
+## System Requirements
+
+Before you get started here are the system requirements you'll need in order to run my script: 
+
+| Component   | Requirement                                      |
+|-------------|--------------------------------------------------|
+| macOS       | Any recent version with Homebrew                 |
+| Ubuntu/Debian | 20.04+                                         |
+| Fedora/RHEL/CentOS | 8+                                        |
+| Arch Linux  | Latest                                           |
+| Privileges  | Administrator (sudo) access                      |
+| Network     | Active internet connection                       |
+
+PAN capabilities are in the works as well. 
+
 ## Core Capabilities
 
 This setup provides multi-provider DNS failover with encrypted queries, aggressive caching, and a 24-hour survival mode that serves cached responses even when all upstream providers are unavailable. The system automatically rotates through Cloudflare, Quad9, and Google DNS servers, falling back to cached entries if the internet itself becomes unreachable.
