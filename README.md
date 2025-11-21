@@ -22,7 +22,7 @@ This setup provides multi-provider DNS failover with encrypted queries, aggressi
 Download and run the installer script. It handles everything from Unbound installation to system DNS configuration.
 
 ```bash
-curl -O https://github.com/montana/unbound-dns.git
+curl -O https://raw.githubusercontent.com/Montana/unbound-dns/main/unbound_dns.sh
 chmod +x unbound_dns.sh
 ./unbound_dns.sh
 ```
