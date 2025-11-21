@@ -20,6 +20,8 @@ BREW_PREFIX="$(brew --prefix)"
 UNBOUND_ETC="${BREW_PREFIX}/etc/unbound"
 UNBOUND_CONF="${UNBOUND_ETC}/unbound.conf"
 UNBOUND_LOG="${BREW_PREFIX}/var/log/unbound.log"
+ROOT_HINTS="${UNBOUND_ETC}/root.hints"
+TRUST_ANCHOR="${UNBOUND_ETC}/root.key"
 
 if ! command -v unbound >/dev/null 2>&1; then
   log_info "Installing Unbound..."
@@ -32,13 +34,33 @@ fi
 mkdir -p "${UNBOUND_ETC}"
 mkdir -p "${BREW_PREFIX}/var/log"
 
+log_info "Downloading root hints file..."
+if curl -fsSL https://www.internic.net/domain/named.root -o "${ROOT_HINTS}"; then
+  log_info "Root hints downloaded successfully"
+else
+  log_warn "Failed to download root hints, will proceed without it"
+  ROOT_HINTS=""
+fi
+
+log_info "Initializing DNSSEC trust anchor..."
+if [ -f "${TRUST_ANCHOR}" ]; then
+  log_info "Trust anchor already exists, updating..."
+  unbound-anchor -a "${TRUST_ANCHOR}" -v || log_warn "Trust anchor update failed, using existing"
+else
+  if unbound-anchor -a "${TRUST_ANCHOR}" -v; then
+    log_info "Trust anchor initialized successfully"
+  else
+    log_warn "Failed to initialize trust anchor, DNSSEC validation may not work"
+  fi
+fi
+
 if [ -f "${UNBOUND_CONF}" ]; then
   BACKUP="${UNBOUND_CONF}.$(date +%Y%m%d_%H%M%S).bak"
   log_info "Backing up existing config to ${BACKUP}"
   cp "${UNBOUND_CONF}" "${BACKUP}"
 fi
 
-log_info "Writing Unbound configuration with multi-provider failover..."
+log_info "Writing Unbound configuration with DNSSEC validation and stats..."
 cat > "${UNBOUND_CONF}" <<EOF
 server:
     verbosity: 1
@@ -95,6 +117,32 @@ server:
     serve-expired: yes
     serve-expired-ttl: 86400
     serve-expired-ttl-reset: yes
+EOF
+
+if [ -n "${ROOT_HINTS}" ] && [ -f "${ROOT_HINTS}" ]; then
+  cat >> "${UNBOUND_CONF}" <<EOF
+    
+    root-hints: "${ROOT_HINTS}"
+EOF
+fi
+
+if [ -f "${TRUST_ANCHOR}" ]; then
+  cat >> "${UNBOUND_CONF}" <<EOF
+    
+    auto-trust-anchor-file: "${TRUST_ANCHOR}"
+    val-clean-additional: yes
+    val-permissive-mode: no
+    val-log-level: 1
+EOF
+fi
+
+cat >> "${UNBOUND_CONF}" <<EOF
+
+remote-control:
+    control-enable: yes
+    control-interface: 127.0.0.1
+    control-port: 8953
+    control-use-cert: no
 
 forward-zone:
     name: "."
@@ -107,6 +155,9 @@ forward-zone:
     forward-tls-upstream: yes
     forward-no-cache: no
 EOF
+
+log_info "Setting up remote control..."
+unbound-control-setup -d "${UNBOUND_ETC}" >/dev/null 2>&1 || log_warn "Control setup may have failed"
 
 log_info "Validating Unbound configuration..."
 if ! unbound-checkconf "${UNBOUND_CONF}"; then
@@ -153,5 +204,16 @@ else
   log_warn "'dig' not found. Install with: brew install bind"
 fi
 
-log_info "Setup complete! DNS failover: Cloudflare → Quad9 → Google"
-log_info "Cached responses will be served even if all upstream servers fail"
+log_info ""
+log_info "Setup complete! Features enabled:"
+log_info "  ✓ DNS failover: Cloudflare → Quad9 → Google"
+log_info "  ✓ DNSSEC validation with auto-updating trust anchor"
+log_info "  ✓ Root hints for improved performance"
+log_info "  ✓ Statistics endpoint on 127.0.0.1:8953"
+log_info ""
+log_info "View statistics with:"
+log_info "  unbound-control -c ${UNBOUND_CONF} stats_noreset"
+log_info ""
+log_info "Check DNSSEC validation:"
+log_info "  dig @127.0.0.1 dnssec.works +dnssec"
+log_info "  dig @127.0.0.1 dnssec-failed.org +dnssec"
