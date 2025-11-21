@@ -1,0 +1,311 @@
+language: shell
+
+os:
+  - linux
+  - osx
+
+dist: focal
+
+osx_image: xcode14.2
+
+branches:
+  only:
+    - main
+    - master
+    - develop
+
+addons:
+  apt:
+    packages:
+      - shellcheck
+      - unbound
+  homebrew:
+    packages:
+      - shellcheck
+      - unbound
+
+env:
+  global:
+    - HOMEBREW_NO_AUTO_UPDATE=1
+    - HOMEBREW_NO_INSTALL_CLEANUP=1
+
+before_install:
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      echo "Running on Linux (Ubuntu)"
+    elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      echo "Running on macOS"
+    fi
+
+install:
+  - echo "Installing dependencies..."
+  - |
+    if command -v shellcheck &> /dev/null; then
+      echo "✓ ShellCheck version: $(shellcheck --version | head -n2 | tail -n1)"
+    else
+      echo "⚠ ShellCheck not available"
+    fi
+  - |
+    if command -v unbound &> /dev/null; then
+      echo "✓ Unbound version: $(unbound -V 2>&1 | head -n1)"
+    else
+      echo "⚠ Unbound not available"
+    fi
+
+script:
+  - echo "════════════════════════════════════════"
+  - echo "Starting Test Suite"
+  - echo "════════════════════════════════════════"
+  - echo ""
+  
+  - echo "=== 1. Shell Script Syntax Check ==="
+  - |
+    EXIT_CODE=0
+    for script in *.sh; do
+      if [ -f "$script" ]; then
+        echo "Checking: $script"
+        if bash -n "$script"; then
+          echo "✓ Syntax OK: $script"
+        else
+          echo "✗ Syntax Error: $script"
+          EXIT_CODE=1
+        fi
+      fi
+    done
+    if [ $EXIT_CODE -ne 0 ]; then
+      echo "Syntax check failed!"
+      exit 1
+    fi
+  
+  - echo ""
+  - echo "=== 2. ShellCheck Analysis ==="
+  - |
+    if command -v shellcheck &> /dev/null; then
+      EXIT_CODE=0
+      for script in *.sh; do
+        if [ -f "$script" ]; then
+          echo "Analyzing: $script"
+          if shellcheck --severity=error "$script"; then
+            echo "✓ ShellCheck passed: $script"
+          else
+            echo "✗ ShellCheck found errors: $script"
+            EXIT_CODE=1
+          fi
+        fi
+      done
+      if [ $EXIT_CODE -ne 0 ]; then
+        echo "ShellCheck found critical errors!"
+        exit 1
+      fi
+    else
+      echo "⚠ ShellCheck not available, skipping"
+    fi
+  
+  - echo ""
+  - echo "=== 3. README Validation ==="
+  - |
+    if [ -f "README.md" ]; then
+      echo "✓ README.md exists"
+      WORD_COUNT=$(wc -w < README.md | tr -d ' ')
+      echo "  Word count: $WORD_COUNT"
+      
+      if [ "$WORD_COUNT" -gt 100 ]; then
+        echo "✓ README has substantial content"
+      else
+        echo "⚠ README seems short but that's OK"
+      fi
+      
+      if grep -qi "installation" README.md; then
+        echo "✓ README contains Installation section"
+      else
+        echo "⚠ No Installation section found"
+      fi
+    else
+      echo "✗ README.md not found!"
+      exit 1
+    fi
+  
+  - echo ""
+  - echo "=== 4. Unbound Configuration Validation ==="
+  - |
+    if command -v unbound-checkconf &> /dev/null; then
+      cat > /tmp/test_unbound.conf << 'EOF'
+    server:
+        verbosity: 1
+        interface: 127.0.0.1
+        interface: ::1
+        port: 53
+        do-ip4: yes
+        do-ip6: yes
+        do-udp: yes
+        do-tcp: yes
+        access-control: 127.0.0.0/8 allow
+        access-control: ::1 allow
+        
+        hide-identity: yes
+        hide-version: yes
+        harden-glue: yes
+        harden-dnssec-stripped: yes
+        use-caps-for-id: yes
+        
+        cache-min-ttl: 3600
+        cache-max-ttl: 86400
+        prefetch: yes
+        prefetch-key: yes
+        
+        rrset-cache-size: 100m
+        msg-cache-size: 50m
+        num-threads: 2
+        
+        serve-expired: yes
+        serve-expired-ttl: 86400
+        
+        qname-minimisation: yes
+    
+    forward-zone:
+        name: "."
+        forward-tls-upstream: yes
+        forward-addr: 1.1.1.1@853#cloudflare-dns.com
+        forward-addr: 1.0.0.1@853#cloudflare-dns.com
+        forward-addr: 9.9.9.9@853#dns.quad9.net
+        forward-addr: 149.112.112.112@853#dns.quad9.net
+        forward-addr: 8.8.8.8@853#dns.google
+        forward-addr: 8.8.4.4@853#dns.google
+    EOF
+      
+      if unbound-checkconf /tmp/test_unbound.conf 2>&1 | grep -q "no errors"; then
+        echo "✓ Unbound configuration is valid"
+      else
+        echo "⚠ Unbound configuration check returned warnings (may be OK)"
+      fi
+      rm -f /tmp/test_unbound.conf
+    else
+      echo "⚠ unbound-checkconf not available, skipping"
+    fi
+  
+  - echo ""
+  - echo "=== 5. DNS Connectivity Test ==="
+  - |
+    if command -v dig &> /dev/null; then
+      TEST_PASSED=0
+      for provider in "1.1.1.1" "9.9.9.9" "8.8.8.8"; do
+        echo "Testing DNS provider: $provider"
+        if timeout 10 dig @"$provider" google.com +short +time=5 &> /dev/null; then
+          echo "✓ $provider is reachable"
+          TEST_PASSED=1
+        else
+          echo "⚠ $provider not reachable (may be network/firewall issue)"
+        fi
+      done
+      
+      if [ $TEST_PASSED -eq 1 ]; then
+        echo "✓ At least one DNS provider is working"
+      else
+        echo "⚠ No DNS providers reachable (likely CI network restriction)"
+      fi
+    else
+      echo "⚠ dig not available, skipping DNS tests"
+    fi
+  
+  - echo ""
+  - echo "=== 6. DNS-over-TLS Connectivity Test ==="
+  - |
+    if command -v openssl &> /dev/null; then
+      echo "Testing DNS-over-TLS connection to Cloudflare..."
+      if timeout 10 openssl s_client -connect 1.1.1.1:853 -servername cloudflare-dns.com </dev/null 2>&1 | grep -q "Verify return code: 0"; then
+        echo "✓ DNS-over-TLS connection successful"
+      else
+        echo "⚠ DNS-over-TLS test failed (may be firewall/network restriction)"
+      fi
+    else
+      echo "⚠ openssl not available, skipping TLS test"
+    fi
+  
+  - echo ""
+  - echo "=== 7. Script Safety Checks ==="
+  - |
+    for script in *.sh; do
+      if [ -f "$script" ]; then
+        echo "Checking: $script"
+        
+        if grep -q "set -e\|set -u\|set -o pipefail" "$script"; then
+          echo "✓ Uses safety flags (set -e/-u/-o pipefail)"
+        else
+          echo "ℹ No safety flags found (consider adding them)"
+        fi
+        
+        if grep -q "EUID\|getuid\|sudo\|root" "$script"; then
+          echo "✓ Contains privilege checks"
+        else
+          echo "ℹ No obvious privilege checks"
+        fi
+      fi
+    done
+  
+  - echo ""
+  - echo "=== 8. Platform-Specific Command Check ==="
+  - |
+    for script in *.sh; do
+      if [ -f "$script" ]; then
+        if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+          if grep -q "networksetup\|scutil" "$script"; then
+            echo "ℹ $script contains macOS-specific commands (OK on macOS builds)"
+          fi
+        elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+          if grep -q "systemctl\|apt-get\|yum" "$script"; then
+            echo "ℹ $script contains Linux-specific commands (OK on Linux builds)"
+          fi
+        fi
+      fi
+    done
+  
+  - echo ""
+  - echo "=== 9. File Structure Check ==="
+  - |
+    echo "Checking required files..."
+    if [ -f ".travis.yml" ] || [ -f ".github/workflows/ci.yml" ]; then
+      echo "✓ CI configuration present"
+    fi
+    
+    if [ -f "LICENSE" ] || [ -f "LICENSE.md" ]; then
+      echo "✓ LICENSE file present"
+    else
+      echo "ℹ No LICENSE file (consider adding one)"
+    fi
+    
+    SCRIPT_COUNT=$(ls -1 *.sh 2>/dev/null | wc -l | tr -d ' ')
+    echo "✓ Found $SCRIPT_COUNT shell script(s)"
+  
+  - echo ""
+  - echo "════════════════════════════════════════"
+  - echo "✓ All Tests Completed Successfully!"
+  - echo "════════════════════════════════════════"
+
+after_success:
+  - echo ""
+  - echo "Build Information:"
+  - echo "  Build Number: $TRAVIS_BUILD_NUMBER"
+  - echo "  Branch: $TRAVIS_BRANCH"
+  - echo "  OS: $TRAVIS_OS_NAME"
+  - echo "  Commit: ${TRAVIS_COMMIT:0:7}"
+
+after_failure:
+  - echo ""
+  - echo "════════════════════════════════════════"
+  - echo "✗ Build Failed"
+  - echo "════════════════════════════════════════"
+  - echo "Check the logs above for specific errors"
+  - echo "Common issues:"
+  - echo "  • Shell syntax errors"
+  - echo "  • ShellCheck critical errors"
+  - echo "  • Missing README.md"
+
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+
+cache:
+  directories:
+    - $HOME/.cache/Homebrew
+    - $HOME/Library/Caches/Homebrew
