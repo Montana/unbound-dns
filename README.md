@@ -57,6 +57,15 @@ When all upstream providers fail, survival mode serves cached DNS entries for up
 | PID File | `$(brew --prefix)/var/run/unbound.pid` |
 | Listen Address | 127.0.0.1:53, ::1:53 |
 
+## Windows System Configuration Files
+
+| Component | Location |
+|-----------|----------|
+| Configuration File | `C:\Program Files\Unbound\service.conf` |
+| Log File | `C:\Program Files\Unbound\unbound.log` |
+| Executable | `C:\Program Files\Unbound\unbound.exe` |
+| DNS Backup | `%USERPROFILE%\.unbound_dns_backup.json` |
+
 ## Performance Characteristics
 
 | Metric | Value | Impact |
