@@ -8,6 +8,64 @@ A resilient local DNS resolver with automatic failover across multiple DNS provi
 
 This setup provides multi-provider DNS failover with encrypted queries, aggressive caching, and a 24-hour survival mode that serves cached responses even when all upstream providers are unavailable. The system automatically rotates through Cloudflare, Quad9, and Google DNS servers, falling back to cached entries if the internet itself becomes unreachable.
 
+## Verifying Unbound is Actually Working
+
+After installation, you need to confirm that Unbound isn't just running as a background process, but is actually handling your DNS queries. Here's how to verify everything is working correctly.
+
+### Basic Functionality Test
+
+The simplest way to check if Unbound is responding to queries is to ask it directly to resolve a domain name. On macOS or Linux, use `dig @127.0.0.1 google.com`, or on Windows, use `Resolve-DnsName -Name google.com -Server 127.0.0.1`. You should get back a valid IP address with a query time under 50ms on the first try, and under 1ms on subsequent queries due to caching.
+
+But this only proves Unbound can answer questions when you ask it directly. Your system might still be bypassing it entirely and using your ISP's DNS servers. To check what your system is actually using, run `scutil --dns | grep "nameserver"` on macOS, `cat /etc/resolv.conf` on Linux, or `Get-DnsClientServerAddress -AddressFamily IPv4` on Windows. You should see 127.0.0.1 listed as your primary nameserver. If you see something else like 8.8.8.8 or your router's IP, then your system isn't using Unbound at all.
+
+### Proving the Cache Works
+
+The whole point of running a local DNS resolver is caching, so you should verify that's actually happening. Run a DNS query for a domain you haven't visited recently and note the response time. Then immediately run the same query again. The second query should be dramatically faster—we're talking sub-millisecond response times versus 20-50ms for the first query. On macOS/Linux you can use `time dig @127.0.0.1 example.com | grep "Query time"` to see the timing clearly. On Windows, wrap your Resolve-DnsName command in `Measure-Command { }` to see how long it takes.
+
+If both queries take roughly the same amount of time, something is wrong. Either Unbound isn't caching properly, or your queries aren't actually going through Unbound at all. Check the logs to see what's happening. On macOS, the logs are at `$(brew --prefix)/var/log/unbound.log`, on Linux they're typically in `/var/log/unbound/`, and on Windows you'll find them at `C:\Program Files\Unbound\unbound.log`.
+
+### Testing Encrypted Queries
+
+One of the major benefits of this setup is that your DNS queries are encrypted via DNS-over-TLS. To verify this is actually happening, you need to look at network traffic. Install tcpdump on macOS/Linux and run `sudo tcpdump -i any port 53 or port 853 -n` while making DNS queries in another terminal. You should see connections to port 853 (the TLS port) going to upstream providers like 1.1.1.1, but you should NOT see unencrypted port 53 traffic going to external IPs. The only port 53 traffic should be between your system and 127.0.0.1 (localhost).
+
+On Windows, you can use `netstat -an | Select-String "853"` to see active connections to port 853, or open Resource Monitor (resmon.exe) and check the Network tab. If you don't see any port 853 connections when making DNS queries, then encryption isn't working and you're probably falling back to unencrypted DNS somehow.
+
+### Verifying Failover Works
+
+The failover mechanism is critical—if Cloudflare goes down, you want Unbound to seamlessly switch to Quad9 or Google DNS. To test this, you can temporarily block Cloudflare's IPs and verify that DNS still works. On macOS/Linux, add firewall rules with `sudo iptables -A OUTPUT -d 1.1.1.1 -j DROP` and `sudo iptables -A OUTPUT -d 1.0.0.1 -j DROP`. On Windows, create a firewall rule with `New-NetFirewallRule -DisplayName "Block Cloudflare Test" -Direction Outbound -RemoteAddress 1.1.1.1,1.0.0.1 -Action Block`.
+
+Now try resolving a domain you haven't queried recently (so it's not in cache). The query should still succeed, though it might take slightly longer as Unbound fails over to the next provider in the list. You can check the logs to see which upstream server responded. When you're done testing, remove the firewall rules with `sudo iptables -D OUTPUT -d 1.1.1.1 -j DROP` on Linux or `Remove-NetFirewallRule -DisplayName "Block Cloudflare Test"` on Windows.
+
+### Testing DNSSEC Validation
+
+DNSSEC prevents attackers from poisoning DNS responses and redirecting you to malicious sites. To verify it's working, try querying a domain with intentionally broken DNSSEC: `dig @127.0.0.1 dnssec-failed.org` or `Resolve-DnsName -Name dnssec-failed.org -Server 127.0.0.1`. This query should fail with a SERVFAIL error, which proves DNSSEC validation is active. If the query succeeds, DNSSEC validation isn't working and you're vulnerable to DNS spoofing attacks.
+
+You can also verify DNSSEC is working on legitimate domains by querying with the DNSSEC flag: `dig @127.0.0.1 cloudflare.com +dnssec`. Look for RRSIG records in the response and an "ad" (authenticated data) flag.
+
+### Monitoring Real Activity
+
+To really understand what Unbound is doing, watch the logs in real-time while browsing the web. Use `tail -f $(brew --prefix)/var/log/unbound.log` on macOS, `sudo tail -f /var/log/unbound/unbound.log` on Linux, or `Get-Content "C:\Program Files\Unbound\unbound.log" -Wait -Tail 20` on Windows. Then open a web browser and visit a few sites. You should see queries flowing through, cache hits being served instantly, and upstream server connections when new domains are requested.
+
+If you don't see any activity in the logs while browsing, your system is definitely not using Unbound. Go back and check your DNS configuration. If you see queries but they're all going upstream without any cache hits, your cache settings might be misconfigured or too small.
+
+### Testing Survival Mode
+
+The 24-hour survival mode is supposed to keep serving cached DNS responses even when all upstream providers are unreachable. To test this, first query a domain like `dig @127.0.0.1 github.com` to get it into cache. Then simulate a complete internet outage by blocking all outbound DNS traffic. On macOS/Linux, use `sudo iptables -A OUTPUT -p tcp --dport 853 -j DROP` and `sudo iptables -A OUTPUT -p udp --dport 53 -j DROP`. On Windows, you can disable all network adapters except loopback with `Get-NetAdapter | Where-Object {$_.Name -ne "Loopback"} | Disable-NetAdapter -Confirm:$false`.
+
+Now try querying github.com again. Even though there's no internet connection, Unbound should still return the cached IP address. This is survival mode in action. New domains that aren't cached will fail, but anything you've visited recently should still resolve. Clean up your test by removing the firewall rules or re-enabling network adapters when you're done.
+
+### Comparing with Direct DNS Queries
+
+As a sanity check, you can compare Unbound's responses with what you'd get from querying an upstream provider directly. Query a domain through Unbound with `dig @127.0.0.1 amazon.com`, then query the same domain directly through Cloudflare with `dig @1.1.1.1 amazon.com`. The IP addresses returned should match (they might be in different order, but the same IPs should appear). If you get completely different results, either Unbound is serving very stale cache data or something is seriously misconfigured.
+
+### Performance Reality Check
+
+To get a sense of real-world performance, test a variety of domains under different conditions. Query five or ten popular domains you haven't visited recently and note the response times. These first queries will be cache misses and require upstream lookups, so they might take 20-50ms depending on the upstream provider's latency. Then immediately query the same domains again. The second round should be nearly instant—under 1ms for cached responses.
+
+If your cached queries are still taking 10-20ms, something is interfering with the cache. Check that your cache size settings in the configuration file are adequate (should be at least 50MB for the message cache and 100MB for the RRset cache). If first queries are consistently slow (over 100ms), you might be experiencing failover delays or network issues reaching the upstream providers. Check that port 853 isn't being blocked by your firewall or ISP.
+
+The difference between cached and uncached queries should be dramatic. If it's not, Unbound isn't providing much value and you should investigate why caching isn't working properly.
+
 ## Requirements
 
 | Component | Requirement |
