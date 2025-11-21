@@ -238,6 +238,17 @@ Your DNS keeps working even when providers go down. That's the whole point.
 | Test resolution | `dig @127.0.0.1 google.com` |
 | Restore system DNS | `sudo networksetup -setdnsservers "Wi-Fi" empty` |
 
+## Linux Management Commands
+
+| Task         | Command                                                                 |
+|--------------|-------------------------------------------------------------------------|
+| Check status | `systemctl status unbound`                                              |
+| View logs    | `journalctl -xeu unbound`                                               |
+| Restart      | `sudo systemctl restart unbound`                                        |
+| Stop         | `sudo systemctl stop unbound`                                           |
+| Test DNS     | `dig @127.0.0.1 google.com`                                             |
+| Restore DNS  | `sudo chattr -i /etc/resolv.conf && sudo rm /etc/resolv.conf`          |
+
 ## Troubleshooting Guide
 
 ### DNS Not Working
