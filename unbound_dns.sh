@@ -289,7 +289,8 @@ start_unbound_macos() {
         sleep 2
     fi
     
-    brew services start unbound
+    log "Starting Unbound as a background service (requires sudo)..."
+    sudo $(brew --prefix)/sbin/unbound -c "$UNBOUND_CONF" &
     
     sleep 3
     
@@ -403,8 +404,8 @@ show_completion_message() {
     if [[ "$OS" == "macos" ]]; then
         echo -e "  Check status: ${YELLOW}pgrep -x unbound${NC}"
         echo -e "  View logs: ${YELLOW}tail -f $UNBOUND_LOG${NC}"
-        echo -e "  Restart: ${YELLOW}brew services restart unbound${NC}"
-        echo -e "  Stop: ${YELLOW}brew services stop unbound${NC}"
+        echo -e "  Restart: ${YELLOW}sudo killall unbound && sudo $(brew --prefix)/sbin/unbound -c $UNBOUND_CONF &${NC}"
+        echo -e "  Stop: ${YELLOW}sudo killall unbound${NC}"
         echo -e "  Restore DNS: ${YELLOW}sudo networksetup -setdnsservers Wi-Fi empty${NC}"
     else
         echo -e "  Check status: ${YELLOW}systemctl status unbound${NC}"
