@@ -497,10 +497,16 @@ Tips:
             messagebox.showwarning("Busy", "Installation is already in progress")
             return
         
-        response = messagebox.askyesno("Confirm Installation", 
-                                       "This will install Unbound DNS and modify system DNS settings.\n\n"
-                                       "The script requires sudo privileges.\n\n"
-                                       "Continue?")
+        if self.os_type == "macos":
+            confirm_msg = ("This will install Unbound DNS and modify system DNS settings.\n\n"
+                          "The script will request sudo privileges when needed.\n\n"
+                          "Continue?")
+        else:
+            confirm_msg = ("This will install Unbound DNS and modify system DNS settings.\n\n"
+                          "The script requires sudo privileges.\n\n"
+                          "Continue?")
+        
+        response = messagebox.askyesno("Confirm Installation", confirm_msg)
         if not response:
             return
         
@@ -514,10 +520,10 @@ Tips:
             self.log("=" * 70, "#0066cc")
             self.log("")
             
-            script_path = Path(__file__).parent / "unbound_install.sh"
+            script_path = Path(__file__).parent / "unbound_dns.sh"
             
             if not script_path.exists():
-                self.log("ERROR: unbound_install.sh not found!", "#ff6b6b")
+                self.log("ERROR: unbound_dns.sh not found!", "#ff6b6b")
                 self.log("Please ensure the bash script is in the same directory.", "#ff6b6b")
                 self.log(f"Looking for: {script_path}", "#ff6b6b")
                 self.root.after(0, self.installation_complete, False)
@@ -526,7 +532,10 @@ Tips:
             self.log(f"Found installation script: {script_path}", "#28a745")
             self.log("Starting installation process...\n")
             
-            success = self.run_command(f"sudo bash {script_path}")
+            if self.os_type == "macos":
+                success = self.run_command(f"bash {script_path}")
+            else:
+                success = self.run_command(f"sudo bash {script_path}")
             
             self.log("")
             if success:
