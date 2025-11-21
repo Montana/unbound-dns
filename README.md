@@ -101,9 +101,12 @@ Now try querying github.com again. Even though there's no internet connection, U
 
 To use the Unbound DNS Installer GUI, first ensure both files (`unbound_gui.py` and `unbound_install.sh`) are in the same directory. Launch the application by opening a terminal, navigating to the directory containing the files, and running python3 unbound_gui.py. The interface will open showing a clean window with status information at the top, a large output section in the middle, and control buttons at the bottom.
 
+
 <img width="792" height="629" alt="Screenshot 2025-11-21 at 1 16 48 PM" src="https://github.com/user-attachments/assets/830c8245-c4e9-4d4a-8a98-aad4dd336f3f" />
 
-<br> When you're ready to install Unbound DNS for the first time, simply click the Install button. The system will prompt you to confirm the installation and warn you that it requires sudo privileges. After confirming, you'll be asked to enter your system password. The installation process will begin and you'll see detailed progress in the output window as the script detects your operating system, checks for conflicts, installs Unbound, creates the configuration file, starts the service, and configures your system DNS settings. This process typically takes between one to five minutes depending on your system and internet connection. Watch the output window for green success messages indicating each step has completed. When installation finishes, you'll see a completion message and the status section will update to show Unbound as running. </br>
+<br> When you're ready to install Unbound DNS for the first time, simply click the Install button. The system will prompt you to confirm the installation and warn you that it requires sudo privileges. After confirming, you'll be asked to enter your system password. The installation process will begin and you'll see detailed progress in the output window as the script detects your operating system, checks for conflicts, installs Unbound, creates the configuration file, starts the service, and configures your system DNS settings. 
+
+This process typically takes between one to five minutes depending on your system and internet connection. Watch the output window for green success messages indicating each step has completed. When installation finishes, you'll see a completion message and the status section will update to show Unbound as running. </br>
 
 ## GUI Management Commands
 
