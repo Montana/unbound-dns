@@ -1,8 +1,4 @@
 language: shell
 dist: noble
-
-os:
-  - linux
-  - osx
-
+install: skip
 script: echo "test" 
