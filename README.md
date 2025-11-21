@@ -25,7 +25,7 @@ Before you get started here are the system requirements you'll need in order to 
 | Privileges  | Administrator (sudo) access                      |
 | Network     | Active internet connection                       |
 
-PAN capabilities are in the works as well. 
+>PAN (Palo Alto Networks) capabilities are in the works as well. 
 
 ## Core Capabilities
 
