@@ -16,14 +16,18 @@ A resilient local DNS resolver with automatic failover across multiple DNS provi
 
 Before you get started here are the system requirements you'll need in order to run my script: 
 
-| Component   | Requirement                                      |
-|-------------|--------------------------------------------------|
-| macOS       | Any recent version with Homebrew                 |
-| Ubuntu/Debian | 20.04+                                         |
-| Fedora/RHEL/CentOS | 8+                                        |
-| Arch Linux  | Latest                                           |
-| Privileges  | Administrator (sudo) access                      |
-| Network     | Active internet connection                       |
+## System Requirements
+
+| Component        | Requirement                                      |
+|------------------|--------------------------------------------------|
+| macOS            | Any recent version with Homebrew                 |
+| Ubuntu/Debian    | 20.04+                                           |
+| Fedora/RHEL/CentOS | 8+                                             |
+| Arch Linux       | Latest                                           |
+| Windows          | Windows 10/11 or Server 2016+                    |
+| Privileges       | Administrator (sudo) access                      |
+| Network          | Active internet connection                       |
+
 
 ## Windows Requirements 
 
@@ -131,8 +135,12 @@ If you want to use this in Windows please do the following:
 ### Windows
 
 ```bash
-irm https://raw.githubusercontent.com/Montana/unbound-dns/main/install_windows.ps1 | iex
+git clone https://github.com/Montana/unbound-dns.git
+cd unbound-dns
+Set-ExecutionPolicy Bypass -Scope Process
+.\install_windows.ps1
 ```
+
 Enter your password when prompted on Windows or macOS (even WSL2), the script will install Unbound via Homebrew, create an optimized configuration with failover support, start the local DNS resolver on 127.0.0.1:53, configure your system to use it, and verify everything works.
 
 ## DNS Provider Hierarchy
@@ -239,7 +247,7 @@ This is how Unbound works when you run the script:
 
 Your DNS keeps working even when providers go down. That's the whole point.
 
-## Service Management Commands
+## MacOS Management Commands
 
 | Task | Command |
 |------|---------|
@@ -259,7 +267,19 @@ Your DNS keeps working even when providers go down. That's the whole point.
 | Restart      | `sudo systemctl restart unbound`                                        |
 | Stop         | `sudo systemctl stop unbound`                                           |
 | Test DNS     | `dig @127.0.0.1 google.com`                                             |
-| Restore DNS  | `sudo chattr -i /etc/resolv.conf && sudo rm /etc/resolv.conf`          |
+| Restore DNS  | `sudo chattr -i /etc/resolv.conf && sudo rm /etc/resolv.conf`           |
+
+## Windows Management Commands
+
+| Task         | Command                                                                 |
+|--------------|-------------------------------------------------------------------------|
+| Check status | `Get-Service unbound`                                                   |
+| View logs    | `Get-Content "C:\Program Files\Unbound\unbound.log" -Tail 50`           |
+| Restart      | `Restart-Service unbound`                                               |
+| Stop         | `Stop-Service unbound`                                                  |
+| Test DNS     | `Resolve-DnsName google.com -Server 127.0.0.1`                          |
+| Restore DNS  | `Get-NetAdapter \| Set-DnsClientServerAddress -ResetServerAddresses`    |
+
 
 ## Troubleshooting Guide
 
