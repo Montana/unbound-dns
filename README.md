@@ -139,6 +139,14 @@ When all upstream providers fail, survival mode serves cached DNS entries for up
 | Executable | `C:\Program Files\Unbound\unbound.exe` |
 | DNS Backup | `%USERPROFILE%\.unbound_dns_backup.json` |
 
+## Linux System Configuration Files
+
+| Setting | Location |
+|--------|----------|
+| Config | `/etc/unbound/unbound.conf` |
+| Log | `/var/log/unbound/unbound.log` (RHEL/Arch) / `/var/log/unbound/unbound.log` (Debian) |
+| PID | `/run/unbound.pid` |
+
 ## Performance Characteristics
 
 | Metric | Value | Impact |
