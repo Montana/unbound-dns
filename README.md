@@ -1,4 +1,4 @@
-[![CI](https://github.com/Montana/unbound-dns/actions/workflows/ci.yml/badge.svg)](https://github.com/Montana/unbound-dns/actions/workflows/ci.yml)
+[![CI](https://github.com/Montana/unbound-dns/actions/workflows/ci.yml/badge.svg)](https://github.com/Montana/unbound-dns/actions/workflows/ci.yml) [![Build Status](https://app.travis-ci.com/Montana/unbound-dns.svg?token=U865GtC2ptqX3Ezf3Fzb&branch=master)](https://app.travis-ci.com/Montana/unbound-dns)
 
 # unbound-dns
 
