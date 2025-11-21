@@ -1,5 +1,11 @@
 # unbound-dns
 
+Unbound knows exactly who to call when Cloudflare doesn't pick up.
+
+<img width="469" height="469" alt="political pressures (3)" src="https://github.com/user-attachments/assets/6e9da7c6-9ace-4e2a-bc93-6d7fb783f02c" />
+
+Unbound DNS runs on your local machine as a local DNS resolver, translating domain names to IP addresses while caching responses for speed, encrypting queries for privacy, and automatically switching between DNS providers when one fails.
+
 <img width="631" height="800" alt="image" src="https://github.com/user-attachments/assets/25ecd854-1b1d-4bf2-88c7-4b2fdaf79265" />
 
 A resilient local DNS resolver with automatic failover across multiple DNS providers. When Cloudflare goes down, your DNS keeps working. When everything goes down, survival mode kicks in.
