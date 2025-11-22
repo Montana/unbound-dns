@@ -99,7 +99,7 @@ Now try querying github.com again. Even though there's no internet connection, U
 
 ## Graphical User Interface
 
-To use the Unbound DNS Installer GUI, first ensure both files (`unbound_gui.py` and `unbound_install.sh`) are in the same directory. Launch the application by opening a terminal, navigating to the directory containing the files, and running python3 unbound_gui.py. The interface will open showing a clean window with status information at the top, a large output section in the middle, and control buttons at the bottom.
+To use the Unbound DNS Installer GUI, first ensure both files (`unbound_gui.py` and `unbound_install.sh`) are in the same directory. Launch the application by opening a terminal, navigating to the directory containing the files, and running `python3 unbound_gui.py`. The interface will open showing a clean window with status information at the top, a large output section in the middle, and control buttons at the bottom.
 
 When you're ready to install Unbound DNS for the first time, simply click the Install button. The system will prompt you to confirm the installation and warn you that it requires sudo privileges. After confirming, you'll be asked to enter your system password. The installation process will begin and you'll see detailed progress in the output window as the script detects your operating system, checks for conflicts, installs Unbound, creates the configuration file, starts the service, and configures your system DNS settings. 
 
@@ -109,7 +109,7 @@ This process typically takes between one to five minutes depending on your syste
 
 <img width="879" height="724" alt="Screenshot 2025-11-21 at 2 02 15 PM" src="https://github.com/user-attachments/assets/d208976a-b426-44b4-8458-d2c7d9b54d0f" />
 
-<br> While the GUI provides all the controls you need, you can also manage Unbound from the command line if preferred. On macOS, use brew services status unbound to check status, brew services restart unbound to restart the service, and brew services stop unbound to stop it. On Linux systems, use `systemctl status unbound` to check status, systemctl restart unbound to restart, and systemctl stop unbound to stop the service. To view detailed logs on macOS, run `tail -f $(brew --prefix)/var/log/unbound.log`, and on Linux use `journalctl -xeu unbound`. For testing DNS resolution, use `dig @127.0.0.1 google.com` which queries your local Unbound server and displays the results. </br>
+<br> While the GUI provides all the controls you need, you can also manage Unbound from the command line if preferred. On macOS, use brew services status unbound to check status, brew services restart unbound to restart the service, and brew services stop unbound to stop it. On Linux systems, use `systemctl status unbound` to check status, `systemctl restart unbound` to restart, and `systemctl stop unbound` to stop the service. To view detailed logs on macOS, run `tail -f $(brew --prefix)/var/log/unbound.log`, and on Linux use `journalctl -xeu unbound`. For testing DNS resolution, use `dig @127.0.0.1 google.com` which queries your local Unbound server and displays the results. </br>
 
 https://github.com/user-attachments/assets/b2279c16-4f6e-4cc4-af63-07ac93a7bbd5
 
