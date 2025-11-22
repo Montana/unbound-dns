@@ -112,6 +112,7 @@ This process typically takes between one to five minutes depending on your syste
 <br> While the GUI provides all the controls you need, you can also manage Unbound from the command line if preferred. On macOS, use brew services status unbound to check status, brew services restart unbound to restart the service, and brew services stop unbound to stop it. On Linux systems, use `systemctl status unbound` to check status, `systemctl restart unbound` to restart, and `systemctl stop unbound` to stop the service. To view detailed logs on macOS, run `tail -f $(brew --prefix)/var/log/unbound.log`, and on Linux use `journalctl -xeu unbound`. For testing DNS resolution, use `dig @127.0.0.1 google.com` which queries your local Unbound server and displays the results. </br>
 
 https://github.com/user-attachments/assets/b2279c16-4f6e-4cc4-af63-07ac93a7bbd5
+> If on macOS run `sudo /opt/homebrew/sbin/unbound -c /opt/homebrew/etc/unbound/unbound.conf` to make sure the right `conf` file is being read. 
 
 ### Comparing with Direct DNS Queries
 
